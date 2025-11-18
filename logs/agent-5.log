@@ -1,0 +1,9 @@
+
+🤖 Miyabi Agent CLI
+
+- codegenAgent 実行中...
+[CodeGenAgent] Config: {"hasApiKey":true,"useClaudeCode":false}
+[CodeGenAgent] AnthropicClient created
+[AnthropicClient] Code generated: 6 files, quality: 88
+✓ CodeGen output saved: /Users/mashimaro/.miyabi/storage/IvyGain-skillfreak-streaming-system/issue-5/codegen-output.json
+✔ codegenAgent 実行完了 (138568ms)
