@@ -328,6 +328,10 @@ LARKBASE_VIEW_ID=vewdrMdlvD  # デフォルトビュー
 # LarkBase URL
 # https://ivygain-project.jp.larksuite.com/wiki/PxvIwd2fniGE5pkiC0YjHCNEpad?table=tblnPssJqIBXNi6a&view=vewdrMdlvD
 
+# Lark Drive アーカイブフォルダ
+LARK_DRIVE_FOLDER_ID=R2oWfpO5wlLEwBd5dMIjGRwvp2g
+# https://ivygain-project.jp.larksuite.com/drive/folder/R2oWfpO5wlLEwBd5dMIjGRwvp2g
+
 # Discord OAuth2（追加予定）
 DISCORD_CLIENT_ID=xxxxx
 DISCORD_CLIENT_SECRET=xxxxx
