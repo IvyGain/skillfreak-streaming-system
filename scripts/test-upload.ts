@@ -4,7 +4,7 @@
  * 既存のダウンロード済みファイルをアップロード
  */
 
-import { uploadVideoToLark } from '../lib/lark-client';
+import { uploadVideoToLarkHTTP } from '../lib/lark-drive-http';
 import dotenv from 'dotenv';
 import * as path from 'path';
 
@@ -17,14 +17,14 @@ const LARK_DRIVE_FOLDER = process.env.LARK_DRIVE_FOLDER_ID!;
 async function main() {
   const videoFile = path.join(DOWNLOAD_DIR, `${VIDEO_ID}.mp4`);
 
-  console.log('🧪 Lark Driveアップロードテスト');
+  console.log('🧪 Lark Driveアップロードテスト（HTTP直接実装）');
   console.log('='.repeat(60));
   console.log(`📂 ファイル: ${videoFile}`);
   console.log(`📁 Lark Driveフォルダ: ${LARK_DRIVE_FOLDER}`);
   console.log('');
 
   try {
-    const fileToken = await uploadVideoToLark(videoFile, LARK_DRIVE_FOLDER);
+    const fileToken = await uploadVideoToLarkHTTP(videoFile, LARK_DRIVE_FOLDER);
     console.log('');
     console.log('='.repeat(60));
     console.log('✅ テスト成功！');
