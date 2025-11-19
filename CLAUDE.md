@@ -320,6 +320,14 @@ npm run dev
 LARK_APP_ID=cli_a85cf9e496f8de1c
 LARK_APP_SECRET=dVj86A5gl12OBQl0tX5FDfR5FoDvsJLq
 
+# LarkBase イベント管理DB
+LARKBASE_APP_TOKEN=PxvIwd2fniGE5pkiC0YjHCNEpad
+LARKBASE_TABLE_ID=tblnPssJqIBXNi6a
+LARKBASE_VIEW_ID=vewdrMdlvD  # デフォルトビュー
+
+# LarkBase URL
+# https://ivygain-project.jp.larksuite.com/wiki/PxvIwd2fniGE5pkiC0YjHCNEpad?table=tblnPssJqIBXNi6a&view=vewdrMdlvD
+
 # Discord OAuth2（追加予定）
 DISCORD_CLIENT_ID=xxxxx
 DISCORD_CLIENT_SECRET=xxxxx
