@@ -155,6 +155,8 @@ export async function uploadVideoToLark(
     console.log(`📦 パート数: ${blockNum}, パートサイズ: ${(blockSize / 1024 / 1024).toFixed(2)}MB`);
 
     // Step 2: 各パートをアップロード
+    const { Readable } = require('stream');
+
     for (let i = 0; i < blockNum; i++) {
       const start = i * blockSize;
       const end = Math.min(start + blockSize, fileSize);
@@ -165,12 +167,15 @@ export async function uploadVideoToLark(
       fs.readSync(fd, buffer, 0, buffer.length, start);
       fs.closeSync(fd);
 
+      // BufferをStreamに変換
+      const stream = Readable.from(buffer);
+
       const partRes = await client.drive.file.uploadPart({
         data: {
           upload_id: uploadId,
           seq: i,
           size: buffer.length,
-          file: buffer,
+          file: stream,
         },
       });
 
