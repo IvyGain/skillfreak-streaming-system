@@ -2,9 +2,30 @@
 
 ## プロジェクト概要
 
-**skillfreak-streaming-system** - Miyabiフレームワークで構築された自律型開発プロジェクト
+**SkillFreak 24時間VOD配信システム** - Lark/Feishuエコシステム統合型ストリーミングポータル
 
-このプロジェクトは識学理論(Shikigaku Theory)とAI Agentsを組み合わせた自律型開発環境で運用されています。
+YouTube Liveアーカイブを自動でLark Driveに保存し、LarkBaseで管理、24時間リピート配信するシステム
+
+## 🎯 システムフロー（重要！）
+
+```
+YouTube Live
+  ↓ yt-dlp自動ダウンロード
+Lark Drive（アーカイブストレージ）
+  ↓ メタデータ登録
+LarkBase（多元表 - DB代わり）
+  ↓ API経由でデータ取得
+Portal イベントページ（Next.js）
+  ↓ Lark Drive動画を埋め込み再生
+24時間VOD（Lark Driveフォルダを順次リピート）
+```
+
+**技術スタック:**
+- **ストレージ**: Lark Drive（Backblaze B2は使わない）
+- **データベース**: LarkBase多元表（Supabaseは使わない）
+- **認証**: Lark/Feishu認証
+- **フロントエンド**: Next.js 15 + React 19
+- **自動化**: yt-dlp + Lark API
 
 ## 🌸 Miyabi Framework
 
@@ -166,12 +187,40 @@ Claude Code で以下のコマンドが使用可能:
 ## 環境変数
 
 ```bash
-# GitHub Personal Access Token（必須）
+# Lark/Feishu API（必須）
+LARK_APP_ID=cli_xxxxx
+LARK_APP_SECRET=xxxxx
+LARK_BASE_ID=xxxxx          # LarkBase多元表ID
+LARK_TABLE_ID=xxxxx         # イベント管理テーブルID
+LARK_DRIVE_FOLDER_ID=xxxxx  # アーカイブ保存フォルダID
+
+# GitHub Personal Access Token（Miyabi Agent用）
 GITHUB_TOKEN=ghp_xxxxx
 
-# Anthropic API Key（必須 - Agent実行時）
+# Anthropic API Key（Miyabi Agent用）
 ANTHROPIC_API_KEY=sk-ant-xxxxx
 ```
+
+## 📋 実装ステータス（2025-01-19更新）
+
+### ✅ 完成（8/11 Issues）
+- Database Schema → LarkBaseに移行予定
+- B2 Storage → Lark Driveに移行予定
+- UI Components（6個）
+- Documentation（3個）
+- HLS Player（LivePlayer.tsx）
+- Admin Dashboard（StreamDashboard.tsx）
+- API Routes（7個）→ LarkBase連携に改修予定
+- VPS Setup Scripts（Nginx設定）
+
+### 🔄 移行・改修が必要
+1. **Supabase → LarkBase**: データベースをLarkBase多元表に移行
+2. **B2 Storage → Lark Drive**: ストレージをLark Driveに変更
+3. **API Routes**: LarkBase API連携に書き換え
+4. **認証**: Lark/Feishu認証実装
+
+### ❌ 未実装
+- E2E Testing（Issue #13）
 
 ## サポート
 
