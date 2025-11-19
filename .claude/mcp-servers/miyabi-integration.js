@@ -25,6 +25,13 @@ import { execSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
+// Ensure thinking is enabled for Anthropic requests made from this MCP server.
+// Some strategies (eg. clear_thinking_*) require `thinking` to be enabled
+// in the request; set environment variables here so downstream clients inherit them.
+process.env.ANTHROPIC_ENABLE_THINKING = process.env.ANTHROPIC_ENABLE_THINKING || 'true';
+process.env.THINKING = process.env.THINKING || 'true';
+console.error('Miyabi MCP Server: THINKING mode enabled via environment variables');
+
 const server = new Server(
   {
     name: 'miyabi-integration',
@@ -41,13 +48,16 @@ const server = new Server(
  * Execute miyabi command
  */
 function executeMiyabiCommand(command, options = {}) {
+  const baseCmd = `npx miyabi ${command}`;
+  const cmd = options.forceThinking && !baseCmd.includes('--thinking') ? `${baseCmd} --thinking` : baseCmd;
+
   try {
-    const cmd = `npx miyabi ${command}`;
     const result = execSync(cmd, {
       encoding: 'utf-8',
       cwd: options.cwd || process.cwd(),
       stdio: options.silent ? 'pipe' : 'inherit',
       maxBuffer: 10 * 1024 * 1024, // 10MB
+      env: options.env ? { ...process.env, ...options.env } : process.env,
     });
 
     return {
@@ -55,11 +65,54 @@ function executeMiyabiCommand(command, options = {}) {
       output: result,
     };
   } catch (error) {
+    const stderr = error.stderr?.toString() || '';
+    const stdout = error.stdout?.toString() || '';
+
+    // If the failure is the known "requires `thinking`" error (or similar
+    // invalid_request_error mentioning thinking), retry once with an explicit
+    // flag and environment variables that enable "thinking".
+    const needsThinking = /requires\s+`thinking`/i.test(stderr) || /clear_thinking_/i.test(stderr) || /invalid_request_error/i.test(stderr);
+    if (needsThinking && !options._alreadyRetried) {
+      try {
+        const retryCmd = baseCmd.includes('--thinking') ? baseCmd : `${baseCmd} --thinking`;
+        const retryEnv = {
+          ...process.env,
+          ...(options.env || {}),
+          THINKING: 'true',
+          ANTHROPIC_ENABLE_THINKING: 'true',
+        };
+
+        // mark as already retried to avoid accidental loops if this function
+        // were to be invoked recursively or extended later
+        options._alreadyRetried = true;
+
+        const retryResult = execSync(retryCmd, {
+          encoding: 'utf-8',
+          cwd: options.cwd || process.cwd(),
+          stdio: options.silent ? 'pipe' : 'inherit',
+          maxBuffer: 10 * 1024 * 1024,
+          env: retryEnv,
+        });
+
+        return {
+          success: true,
+          output: retryResult,
+        };
+      } catch (retryError) {
+        return {
+          success: false,
+          error: retryError.message,
+          stderr: retryError.stderr?.toString() || stderr,
+          stdout: retryError.stdout?.toString() || stdout,
+        };
+      }
+    }
+
     return {
       success: false,
       error: error.message,
-      stderr: error.stderr?.toString() || '',
-      stdout: error.stdout?.toString() || '',
+      stderr,
+      stdout,
     };
   }
 }

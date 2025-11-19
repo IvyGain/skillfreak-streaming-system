@@ -33,19 +33,19 @@ tmux split-window -v -t $SESSION:0.2
 
 # 各ペインでAgent実行
 echo "  [Agent 1/5] Issue #4: Database Schema"
-tmux send-keys -t $SESSION:0.0 "ANTHROPIC_API_KEY=\"$ANTHROPIC_API_KEY\" npx miyabi agent run codegen --issue 4 2>&1 | tee logs/agent-4.log" C-m
+tmux send-keys -t $SESSION:0.0 "./scripts/miyabi-run.sh agent run codegen --issue 4 2>&1 | tee logs/agent-4.log" C-m
 
 echo "  [Agent 2/5] Issue #5: Authentication"
-tmux send-keys -t $SESSION:0.1 "ANTHROPIC_API_KEY=\"$ANTHROPIC_API_KEY\" npx miyabi agent run codegen --issue 5 2>&1 | tee logs/agent-5.log" C-m
+tmux send-keys -t $SESSION:0.1 "./scripts/miyabi-run.sh agent run codegen --issue 5 2>&1 | tee logs/agent-5.log" C-m
 
 echo "  [Agent 3/5] Issue #6: Storage Integration"
-tmux send-keys -t $SESSION:0.2 "ANTHROPIC_API_KEY=\"$ANTHROPIC_API_KEY\" npx miyabi agent run codegen --issue 6 2>&1 | tee logs/agent-6.log" C-m
+tmux send-keys -t $SESSION:0.2 "./scripts/miyabi-run.sh agent run codegen --issue 6 2>&1 | tee logs/agent-6.log" C-m
 
 echo "  [Agent 4/5] Issue #7: UI Components"
-tmux send-keys -t $SESSION:0.3 "ANTHROPIC_API_KEY=\"$ANTHROPIC_API_KEY\" npx miyabi agent run codegen --issue 7 2>&1 | tee logs/agent-7.log" C-m
+tmux send-keys -t $SESSION:0.3 "./scripts/miyabi-run.sh agent run codegen --issue 7 2>&1 | tee logs/agent-7.log" C-m
 
 echo "  [Agent 5/5] Issue #8: Documentation"
-tmux send-keys -t $SESSION:0.4 "ANTHROPIC_API_KEY=\"$ANTHROPIC_API_KEY\" npx miyabi agent run codegen --issue 8 2>&1 | tee logs/agent-8.log" C-m
+tmux send-keys -t $SESSION:0.4 "./scripts/miyabi-run.sh agent run codegen --issue 8 2>&1 | tee logs/agent-8.log" C-m
 
 echo ""
 echo "✅ Level 0 agents started in tmux session: $SESSION"

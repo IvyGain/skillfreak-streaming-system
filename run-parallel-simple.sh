@@ -17,23 +17,23 @@ echo ""
 
 # 各Agentをバックグラウンドで起動
 echo "  [1/5] Agent #4: Database Schema 起動中..."
-ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" npx miyabi agent run codegen --issue 4 > logs/agent-4.log 2>&1 &
+./scripts/miyabi-run.sh agent run codegen --issue 4 > logs/agent-4.log 2>&1 &
 PID1=$!
 
 echo "  [2/5] Agent #5: Authentication 起動中..."
-ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" npx miyabi agent run codegen --issue 5 > logs/agent-5.log 2>&1 &
+./scripts/miyabi-run.sh agent run codegen --issue 5 > logs/agent-5.log 2>&1 &
 PID2=$!
 
 echo "  [3/5] Agent #6: Storage Integration 起動中..."
-ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" npx miyabi agent run codegen --issue 6 > logs/agent-6.log 2>&1 &
+./scripts/miyabi-run.sh agent run codegen --issue 6 > logs/agent-6.log 2>&1 &
 PID3=$!
 
 echo "  [4/5] Agent #7: UI Components 起動中..."
-ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" npx miyabi agent run codegen --issue 7 > logs/agent-7.log 2>&1 &
+./scripts/miyabi-run.sh agent run codegen --issue 7 > logs/agent-7.log 2>&1 &
 PID4=$!
 
 echo "  [5/5] Agent #8: Documentation 起動中..."
-ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" npx miyabi agent run codegen --issue 8 > logs/agent-8.log 2>&1 &
+./scripts/miyabi-run.sh agent run codegen --issue 8 > logs/agent-8.log 2>&1 &
 PID5=$!
 
 echo ""
