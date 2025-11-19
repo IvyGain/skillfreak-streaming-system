@@ -170,21 +170,32 @@ export async function uploadVideoToLark(
       // BufferをStreamに変換
       const stream = Readable.from(buffer);
 
-      const partRes = await client.drive.file.uploadPart({
-        data: {
-          upload_id: uploadId,
-          seq: i,
-          size: buffer.length,
-          file: stream,
-        },
-      });
+      try {
+        const partRes = await client.drive.file.uploadPart({
+          data: {
+            upload_id: uploadId,
+            seq: i,
+            size: buffer.length,
+            file: stream,
+          },
+        });
 
-      if (partRes.code !== 0) {
-        throw new Error(`Part ${i} upload failed: ${partRes.msg}`);
+        // レスポンスの詳細チェック
+        if (!partRes) {
+          throw new Error(`Part ${i}: Response is null/undefined`);
+        }
+
+        if (partRes.code !== 0) {
+          console.error(`Part ${i} failed:`, JSON.stringify(partRes, null, 2));
+          throw new Error(`Part ${i} upload failed: ${partRes.msg} (code: ${partRes.code})`);
+        }
+
+        const progress = ((i + 1) / blockNum * 100).toFixed(1);
+        console.log(`⏳ 進捗: ${progress}% (${i + 1}/${blockNum})`);
+      } catch (error) {
+        console.error(`❌ Part ${i} error:`, error);
+        throw error;
       }
-
-      const progress = ((i + 1) / blockNum * 100).toFixed(1);
-      console.log(`⏳ 進捗: ${progress}% (${i + 1}/${blockNum})`);
     }
 
     // Step 3: アップロード完了

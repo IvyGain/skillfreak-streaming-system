@@ -1,0 +1,24 @@
+[dotenv@17.2.3] injecting env (7) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+🧪 Lark Driveアップロードテスト
+============================================================
+📂 ファイル: downloads/jjQIZjz2BS8.mp4
+📁 Lark Driveフォルダ: R2oWfpO5wlLEwBd5dMIjGRwvp2g
+
+[info]: [ 'client ready' ]
+📤 アップロード準備: jjQIZjz2BS8.mp4 (506.54MB)
+🔄 分割アップロード開始...
+📊 Upload ID: 7574468858078039572
+📦 パート数: 127, パートサイズ: 4.00MB
+❌ Part 0 error: Error: Part 0: Response is null/undefined
+    at uploadVideoToLark (/Users/mashimaro/skillfreak-streaming-system/lib/lark-client.ts:185:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/mashimaro/skillfreak-streaming-system/scripts/test-upload.ts:27:23)
+❌ Upload Error: Error: Part 0: Response is null/undefined
+    at uploadVideoToLark (/Users/mashimaro/skillfreak-streaming-system/lib/lark-client.ts:185:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/mashimaro/skillfreak-streaming-system/scripts/test-upload.ts:27:23)
+
+❌ テスト失敗: Error: Part 0: Response is null/undefined
+    at uploadVideoToLark (/Users/mashimaro/skillfreak-streaming-system/lib/lark-client.ts:185:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async main (/Users/mashimaro/skillfreak-streaming-system/scripts/test-upload.ts:27:23)
