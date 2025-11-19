@@ -256,6 +256,86 @@ npm run dev
 
 **完成度: 100%** 🎉
 
+## 🔮 次フェーズ: PortalApp統合ロードマップ
+
+### 統合先プロジェクト
+- **GitHub**: https://github.com/IvyGain/SkillFreak-PortalApp
+- **統合方針**: LarkBaseイベント管理DBを中核にした会員制ポータル
+
+### アーキテクチャ設計
+
+```
+┌─────────────────────────────────────────────┐
+│         LarkBase イベント管理DB              │
+│         （中核データベース）                  │
+└──────────────┬──────────────────────────────┘
+               │
+       ┌───────┴───────┐
+       │               │
+┌──────▼─────┐  ┌─────▼──────┐
+│クラウドストレージ│  │PortalApp   │
+│(アーカイブ)  │  │(Next.js)    │
+│・動画保存    │  │・イベント一覧│
+│・URL発行     │◄─┤・アーカイブ再生│
+└──────────────┘  │・Discord認証│
+                  └─────┬──────┘
+                        │
+                  ┌─────▼──────┐
+                  │Discord認証  │
+                  │・会員: 視聴OK│
+                  │・非会員: 一覧のみ│
+                  └────────────┘
+```
+
+### 実装タスク
+
+#### Phase 1: Discord認証統合
+- [ ] Discord OAuth2実装
+- [ ] SkillFreak Discordサーバー連携
+- [ ] メンバーロール確認API
+- [ ] 会員/非会員の権限管理
+
+#### Phase 2: LarkBase統合
+- [ ] PortalAppとLarkBaseの双方向同期
+- [ ] イベント情報マッピング
+- [ ] クラウドストレージURL ↔ LarkBase連携
+- [ ] アーカイブURL自動登録
+
+#### Phase 3: 会員制機能
+- [ ] 会員: アーカイブ動画埋め込み再生
+- [ ] 会員: 特典受け取り機能
+- [ ] 非会員: イベント一覧表示のみ
+- [ ] 非会員: SkillFreak入会導線
+
+#### Phase 4: クラウドストレージ連携
+- [ ] アーカイブ動画クラウド保存
+- [ ] 視聴用URL発行（ダウンロード不可）
+- [ ] LarkBaseへのURL自動登録
+- [ ] PortalAppでの埋め込み再生
+
+### Lark App認証情報
+
+```bash
+# 本番用（統合時に使用）
+LARK_APP_ID=cli_a85cf9e496f8de1c
+LARK_APP_SECRET=dVj86A5gl12OBQl0tX5FDfR5FoDvsJLq
+
+# Discord OAuth2（追加予定）
+DISCORD_CLIENT_ID=xxxxx
+DISCORD_CLIENT_SECRET=xxxxx
+DISCORD_GUILD_ID=xxxxx  # SkillFreakサーバーID
+```
+
+### データフロー
+
+1. **イベント作成**: LarkBaseでイベント登録
+2. **YouTube配信**: Live配信実施
+3. **自動アーカイブ**: YouTube→クラウドストレージ
+4. **URL発行**: クラウド→視聴用URL生成
+5. **LarkBase更新**: アーカイブURL登録
+6. **PortalApp同期**: LarkBase→PortalAppデータ同期
+7. **会員視聴**: Discord認証→アーカイブ再生
+
 ## サポート
 
 - **Framework**: [Miyabi](https://github.com/ShunsukeHayashi/Autonomous-Operations)
