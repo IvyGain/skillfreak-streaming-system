@@ -87,7 +87,7 @@ export async function getEventInfo(eventId: string) {
 }
 
 /**
- * 動画ファイルをLark Driveにアップロード
+ * 動画ファイルをLark Driveにアップロード（分割アップロード対応）
  *
  * @param filePath - ローカルファイルパス
  * @param folderToken - アップロード先フォルダのトークン
@@ -103,28 +103,103 @@ export async function uploadVideoToLark(
 
   try {
     const stats = fs.statSync(filePath);
-    const fileStream = fs.createReadStream(filePath);
+    const fileName = path.basename(filePath);
+    const fileSize = stats.size;
 
-    const res = await client.drive.file.uploadAll({
+    console.log(`📤 アップロード準備: ${fileName} (${(fileSize / 1024 / 1024).toFixed(2)}MB)`);
+
+    // 小さなファイル（10MB未満）は従来のuploadAllを使用
+    if (fileSize < 10 * 1024 * 1024) {
+      const fileStream = fs.createReadStream(filePath);
+      const res = await client.drive.file.uploadAll({
+        data: {
+          file_name: fileName,
+          parent_type: 'explorer',
+          parent_node: folderToken,
+          size: fileSize,
+          file: fileStream,
+        },
+      });
+
+      if (res.code !== 0 || !res.data?.file_token) {
+        throw new Error(`Upload failed: ${res.msg}`);
+      }
+
+      console.log(`✅ アップロード完了: ${fileName}`);
+      console.log(`📎 File Token: ${res.data.file_token}`);
+      return res.data.file_token;
+    }
+
+    // 大きなファイルは分割アップロード
+    console.log('🔄 分割アップロード開始...');
+
+    // Step 1: アップロード準備
+    const prepareRes = await client.drive.file.uploadPrepare({
       data: {
-        file_name: path.basename(filePath),
+        file_name: fileName,
         parent_type: 'explorer',
         parent_node: folderToken,
-        size: stats.size,
-        file: fileStream,
+        size: fileSize,
       },
     });
 
-    if (res.code !== 0) {
-      throw new Error(`Upload failed: ${res.msg}`);
+    if (prepareRes.code !== 0 || !prepareRes.data?.upload_id) {
+      throw new Error(`Prepare failed: ${prepareRes.msg}`);
     }
 
-    console.log(`✅ Uploaded: ${path.basename(filePath)}`);
-    console.log(`📎 File Token: ${res.data.file_token}`);
+    const uploadId = prepareRes.data.upload_id;
+    const blockSize = prepareRes.data.block_size || 4 * 1024 * 1024; // デフォルト4MB
+    const blockNum = prepareRes.data.block_num || Math.ceil(fileSize / blockSize);
 
-    return res.data.file_token;
+    console.log(`📊 Upload ID: ${uploadId}`);
+    console.log(`📦 パート数: ${blockNum}, パートサイズ: ${(blockSize / 1024 / 1024).toFixed(2)}MB`);
+
+    // Step 2: 各パートをアップロード
+    for (let i = 0; i < blockNum; i++) {
+      const start = i * blockSize;
+      const end = Math.min(start + blockSize, fileSize);
+      const buffer = Buffer.alloc(end - start);
+
+      // ファイルから該当部分を読み込み
+      const fd = fs.openSync(filePath, 'r');
+      fs.readSync(fd, buffer, 0, buffer.length, start);
+      fs.closeSync(fd);
+
+      const partRes = await client.drive.file.uploadPart({
+        data: {
+          upload_id: uploadId,
+          seq: i,
+          size: buffer.length,
+          file: buffer,
+        },
+      });
+
+      if (partRes.code !== 0) {
+        throw new Error(`Part ${i} upload failed: ${partRes.msg}`);
+      }
+
+      const progress = ((i + 1) / blockNum * 100).toFixed(1);
+      console.log(`⏳ 進捗: ${progress}% (${i + 1}/${blockNum})`);
+    }
+
+    // Step 3: アップロード完了
+    const finishRes = await client.drive.file.uploadFinish({
+      data: {
+        upload_id: uploadId,
+        block_num: blockNum,
+      },
+    });
+
+    if (finishRes.code !== 0 || !finishRes.data?.file_token) {
+      throw new Error(`Finish failed: ${finishRes.msg}`);
+    }
+
+    console.log(`✅ アップロード完了: ${fileName}`);
+    console.log(`📎 File Token: ${finishRes.data.file_token}`);
+
+    return finishRes.data.file_token;
   } catch (error) {
-    console.error('Upload Error:', error);
+    console.error('❌ Upload Error:', error);
     throw error;
   }
 }

@@ -106,12 +106,13 @@ async function registerToLarkBase(
     },
   });
 
-  if (res.code !== 0) {
+  if (res.code !== 0 || !res.data?.record?.record_id) {
     throw new Error(`LarkBase登録失敗: ${res.msg}`);
   }
 
-  console.log(`✅ LarkBase登録完了: ${res.data.record.record_id}`);
-  return res.data.record.record_id;
+  const recordId = res.data.record.record_id;
+  console.log(`✅ LarkBase登録完了: ${recordId}`);
+  return recordId;
 }
 
 /**
