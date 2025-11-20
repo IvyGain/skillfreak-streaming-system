@@ -35,7 +35,7 @@ export async function getTemporaryVideoUrl(fileToken: string): Promise<string> {
 
   try {
     const res = await client.drive.media.batchGetTmpDownloadUrl({
-      data: {
+      params: {
         file_tokens: [fileToken],
       },
     });
@@ -44,7 +44,12 @@ export async function getTemporaryVideoUrl(fileToken: string): Promise<string> {
       throw new Error(`Failed to get URL: ${res.msg}`);
     }
 
-    return res.data.tmp_download_urls[0].tmp_download_url;
+    const urls = res.data?.tmp_download_urls;
+    if (!urls || urls.length === 0) {
+      throw new Error('No download URL returned');
+    }
+
+    return urls[0].tmp_download_url;
   } catch (error) {
     console.error('Lark API Error:', error);
     throw error;
@@ -73,12 +78,17 @@ export async function getEventInfo(eventId: string) {
       throw new Error(`Failed to get event: ${res.msg}`);
     }
 
+    const record = res.data?.record;
+    if (!record) {
+      throw new Error('Event not found');
+    }
+
     return {
-      id: res.data.record.record_id,
-      title: res.data.record.fields['title'] as string,
-      description: res.data.record.fields['description'] as string,
-      fileToken: res.data.record.fields['archive_file_token'] as string,
-      publishedAt: res.data.record.fields['published_at'] as string,
+      id: record.record_id || '',
+      title: (record.fields?.['title'] as string) || '',
+      description: (record.fields?.['description'] as string) || '',
+      fileToken: (record.fields?.['archive_file_token'] as string) || '',
+      publishedAt: (record.fields?.['published_at'] as string) || '',
     };
   } catch (error) {
     console.error('LarkBase Error:', error);
@@ -112,17 +122,19 @@ export async function uploadVideoToLark(
     if (fileSize < 10 * 1024 * 1024) {
       const fileStream = fs.createReadStream(filePath);
       const res = await client.drive.file.uploadAll({
-        data: {
+        params: {
           file_name: fileName,
-          parent_type: 'explorer',
+          parent_type: 'explorer' as const,
           parent_node: folderToken,
           size: fileSize,
+        },
+        data: {
           file: fileStream,
         },
-      });
+      } as any);
 
-      if (res.code !== 0 || !res.data?.file_token) {
-        throw new Error(`Upload failed: ${res.msg}`);
+      if (!res || res.code !== 0 || !res.data?.file_token) {
+        throw new Error(`Upload failed: ${res?.msg || 'Unknown error'}`);
       }
 
       console.log(`✅ アップロード完了: ${fileName}`);
@@ -141,15 +153,15 @@ export async function uploadVideoToLark(
         parent_node: folderToken,
         size: fileSize,
       },
-    });
+    } as any);
 
-    if (prepareRes.code !== 0 || !prepareRes.data?.upload_id) {
-      throw new Error(`Prepare failed: ${prepareRes.msg}`);
+    if ((prepareRes as any).code !== 0 || !(prepareRes as any).data?.upload_id) {
+      throw new Error(`Prepare failed: ${(prepareRes as any).msg}`);
     }
 
-    const uploadId = prepareRes.data.upload_id;
-    const blockSize = prepareRes.data.block_size || 4 * 1024 * 1024; // デフォルト4MB
-    const blockNum = prepareRes.data.block_num || Math.ceil(fileSize / blockSize);
+    const uploadId = (prepareRes as any).data.upload_id;
+    const blockSize = (prepareRes as any).data.block_size || 4 * 1024 * 1024; // デフォルト4MB
+    const blockNum = (prepareRes as any).data.block_num || Math.ceil(fileSize / blockSize);
 
     console.log(`📊 Upload ID: ${uploadId}`);
     console.log(`📦 パート数: ${blockNum}, パートサイズ: ${(blockSize / 1024 / 1024).toFixed(2)}MB`);
@@ -178,16 +190,16 @@ export async function uploadVideoToLark(
             size: buffer.length,
             file: stream,
           },
-        });
+        } as any);
 
         // レスポンスの詳細チェック
         if (!partRes) {
           throw new Error(`Part ${i}: Response is null/undefined`);
         }
 
-        if (partRes.code !== 0) {
+        if ((partRes as any).code !== 0) {
           console.error(`Part ${i} failed:`, JSON.stringify(partRes, null, 2));
-          throw new Error(`Part ${i} upload failed: ${partRes.msg} (code: ${partRes.code})`);
+          throw new Error(`Part ${i} upload failed: ${(partRes as any).msg} (code: ${(partRes as any).code})`);
         }
 
         const progress = ((i + 1) / blockNum * 100).toFixed(1);

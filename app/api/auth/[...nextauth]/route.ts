@@ -20,28 +20,38 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, account, profile }) {
+      // 初回サインイン時のみ会員チェック（レート制限対策）
       if (account && profile) {
         token.accessToken = account.access_token;
         token.discordId = profile.id;
+
+        try {
+          const guildId = process.env.DISCORD_GUILD_ID!;
+          const memberRoleId = process.env.DISCORD_MEMBER_ROLE_ID!;
+
+          // 初回認証時のみAPIコール
+          const isMember = await isSkillFreakMember(
+            account.access_token as string,
+            guildId,
+            memberRoleId
+          );
+
+          token.isMember = isMember;
+        } catch (error: any) {
+          console.error('Discord member check failed:', error.message);
+          // レート制限エラー等の場合はデフォルトでfalse
+          token.isMember = false;
+        }
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user && token.accessToken) {
-        const guildId = process.env.DISCORD_GUILD_ID!;
-        const memberRoleId = process.env.DISCORD_MEMBER_ROLE_ID!;
-
-        // SkillFreak会員かチェック
-        const isMember = await isSkillFreakMember(
-          token.accessToken as string,
-          guildId,
-          memberRoleId
-        );
-
+      if (session.user) {
+        // トークンからキャッシュされた情報を読み取るだけ（APIコールなし）
         session.user = {
           ...session.user,
           id: token.discordId as string,
-          isMember,
+          isMember: token.isMember as boolean || false,
         };
       }
       return session;

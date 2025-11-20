@@ -36,7 +36,7 @@ export async function getVideoDirectUrl(shareToken: string): Promise<string | nu
     // 方法1: Media APIで一時URLを取得
     try {
       const mediaRes = await client.drive.media.batchGetTmpDownloadUrl({
-        data: {
+        params: {
           file_tokens: [shareToken],
         },
       });
@@ -54,7 +54,7 @@ export async function getVideoDirectUrl(shareToken: string): Promise<string | nu
 
     // 方法2: File APIで直接ダウンロードURLを取得
     try {
-      const fileRes = await client.drive.file.downloadFile({
+      const fileRes = await client.drive.file.download({
         path: {
           file_token: shareToken,
         },
@@ -91,7 +91,7 @@ export async function getFileInfo(fileToken: string) {
   const client = getLarkClient();
 
   try {
-    const res = await client.drive.file.getMeta({
+    const res = await client.drive.v1.file.get({
       path: {
         file_token: fileToken,
       },

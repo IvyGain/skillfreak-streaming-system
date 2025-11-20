@@ -63,20 +63,30 @@ export async function getAllEvents(options?: {
       throw new Error(`Failed to get events: ${res.msg}`);
     }
 
-    // レコードをEvent型に変換
-    const events: Event[] = res.data.items.map((item: any) => ({
-      id: item.record_id,
-      title: item.fields.title,
-      description: item.fields.description || '',
-      scheduled_at: item.fields.scheduled_at,
-      youtube_url: item.fields.youtube_url,
-      archive_file_token: item.fields.archive_file_token,
-      archive_url: item.fields.archive_url,
-      status: item.fields.status || 'draft',
-      visibility: item.fields.visibility || 'public',
-      published_at: item.fields.published_at,
-      created_at: item.fields.created_at,
-    }));
+    // レコードをEvent型に変換（LarkBaseの日本語フィールド名をマッピング）
+    const items = res.data?.items || [];
+    const events: Event[] = items.map((item: any) => {
+      const fields = item.fields;
+
+      // イベント開始日時（ミリ秒からISO文字列に変換）
+      const scheduledAt = fields['イベント開始日時']
+        ? new Date(fields['イベント開始日時']).toISOString()
+        : new Date().toISOString();
+
+      return {
+        id: item.record_id,
+        title: fields['イベントタイトル'] || fields['イベント']?.[0]?.text || 'タイトル未設定',
+        description: fields['告知用文章'] || '',
+        scheduled_at: scheduledAt,
+        youtube_url: fields['YouTube URL'] || fields['セミナーURL']?.link || '',
+        archive_file_token: fields['アーカイブファイルトークン'] || '',
+        archive_url: fields['セミナーURL']?.link || fields['アーカイブURL'] || '',
+        status: 'published', // LarkBaseのデータは全て公開済みとして扱う
+        visibility: 'public', // デフォルトで公開
+        published_at: scheduledAt,
+        created_at: scheduledAt,
+      };
+    });
 
     // フィルタリング
     let filtered = events;
@@ -117,19 +127,23 @@ export async function getEventById(id: string): Promise<Event | null> {
       return null;
     }
 
-    const item = res.data.record;
+    const item = res.data?.record;
+    if (!item) {
+      return null;
+    }
+
     return {
-      id: item.record_id,
-      title: item.fields.title,
-      description: item.fields.description || '',
-      scheduled_at: item.fields.scheduled_at,
-      youtube_url: item.fields.youtube_url,
-      archive_file_token: item.fields.archive_file_token,
-      archive_url: item.fields.archive_url,
-      status: item.fields.status || 'draft',
-      visibility: item.fields.visibility || 'public',
-      published_at: item.fields.published_at,
-      created_at: item.fields.created_at,
+      id: String(item.record_id || ''),
+      title: String(item.fields?.['title'] || ''),
+      description: String(item.fields?.['description'] || ''),
+      scheduled_at: String(item.fields?.['scheduled_at'] || ''),
+      youtube_url: String(item.fields?.['youtube_url'] || ''),
+      archive_file_token: String(item.fields?.['archive_file_token'] || ''),
+      archive_url: String(item.fields?.['archive_url'] || ''),
+      status: (item.fields?.['status'] as 'draft' | 'published' | 'archived') || 'draft',
+      visibility: (item.fields?.['visibility'] as 'public' | 'members-only') || 'public',
+      published_at: String(item.fields?.['published_at'] || ''),
+      created_at: String(item.fields?.['created_at'] || ''),
     };
 
   } catch (error) {

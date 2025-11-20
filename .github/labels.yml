@@ -1,0 +1,287 @@
+# Miyabi Framework - 識学理論準拠ラベル体系
+# 10カテゴリー、65+ラベル
+
+# ============================================
+# 1. Type Labels (7)
+# ============================================
+- name: "🐛 type:bug"
+  color: "d73a4a"
+  description: "Something isn't working"
+
+- name: "✨ type:feature"
+  color: "a2eeef"
+  description: "New feature or request"
+
+- name: "♻️ type:refactor"
+  color: "fbca04"
+  description: "Code refactoring"
+
+- name: "📚 type:docs"
+  color: "0075ca"
+  description: "Documentation improvements"
+
+- name: "🧪 type:test"
+  color: "bfd4f2"
+  description: "Testing related"
+
+- name: "🔧 type:chore"
+  color: "fef2c0"
+  description: "Maintenance and chores"
+
+- name: "🔒 type:security"
+  color: "b60205"
+  description: "Security improvements"
+
+# ============================================
+# 2. Priority Labels (4)
+# ============================================
+- name: "📊 priority:P0-Critical"
+  color: "b60205"
+  description: "Critical priority - immediate action required"
+
+- name: "⚠️ priority:P1-High"
+  color: "d93f0b"
+  description: "High priority"
+
+- name: "📊 priority:P2-Medium"
+  color: "fbca04"
+  description: "Medium priority"
+
+- name: "📊 priority:P3-Low"
+  color: "0e8a16"
+  description: "Low priority"
+
+# ============================================
+# 3. State Labels (7)
+# ============================================
+- name: "📥 state:pending"
+  color: "ededed"
+  description: "Waiting to be picked up"
+
+- name: "🔍 state:analyzing"
+  color: "fef2c0"
+  description: "Being analyzed"
+
+- name: "🏗️ state:implementing"
+  color: "c2e0c6"
+  description: "Implementation in progress"
+
+- name: "👀 state:reviewing"
+  color: "d4c5f9"
+  description: "Under review"
+
+- name: "🧪 state:testing"
+  color: "bfd4f2"
+  description: "Testing in progress"
+
+- name: "🚀 state:deploying"
+  color: "0e8a16"
+  description: "Deployment in progress"
+
+- name: "✅ state:done"
+  color: "0e8a16"
+  description: "Completed"
+
+- name: "🚫 state:blocked"
+  color: "b60205"
+  description: "Blocked by dependencies"
+
+- name: "⏸️ state:paused"
+  color: "cccccc"
+  description: "Temporarily paused"
+
+# ============================================
+# 4. Agent Labels (7)
+# ============================================
+- name: "🤖 agent:coordinator"
+  color: "e99695"
+  description: "Coordinator Agent"
+
+- name: "🤖 agent:codegen"
+  color: "c5def5"
+  description: "Code Generation Agent"
+
+- name: "🤖 agent:issue"
+  color: "d4c5f9"
+  description: "Issue Agent"
+
+- name: "🤖 agent:review"
+  color: "bfd4f2"
+  description: "Review Agent"
+
+- name: "🤖 agent:deploy"
+  color: "c2e0c6"
+  description: "Deployment Agent"
+
+- name: "🤖 agent:pr"
+  color: "f9d0c4"
+  description: "PR Agent"
+
+- name: "🤖 agent:test"
+  color: "bfd4f2"
+  description: "Test Agent"
+
+# ============================================
+# 5. Complexity Labels (4)
+# ============================================
+- name: "🔹 complexity:small"
+  color: "c2e0c6"
+  description: "Small task (< 4 hours)"
+
+- name: "🔸 complexity:medium"
+  color: "fbca04"
+  description: "Medium task (4-16 hours)"
+
+- name: "🔶 complexity:large"
+  color: "d93f0b"
+  description: "Large task (1-3 days)"
+
+- name: "🔺 complexity:xlarge"
+  color: "b60205"
+  description: "Extra large task (3+ days)"
+
+# ============================================
+# 6. Phase Labels (5)
+# ============================================
+- name: "🎯 phase:planning"
+  color: "fef2c0"
+  description: "Planning phase"
+
+- name: "🎯 phase:design"
+  color: "bfdadc"
+  description: "Design phase"
+
+- name: "🎯 phase:implementation"
+  color: "c2e0c6"
+  description: "Implementation phase"
+
+- name: "🎯 phase:testing"
+  color: "bfd4f2"
+  description: "Testing phase"
+
+- name: "🎯 phase:deployment"
+  color: "0e8a16"
+  description: "Deployment phase"
+
+# ============================================
+# 7. Impact Labels (4)
+# ============================================
+- name: "💥 impact:breaking"
+  color: "b60205"
+  description: "Breaking changes"
+
+- name: "🎯 impact:major"
+  color: "d93f0b"
+  description: "Major impact"
+
+- name: "📌 impact:minor"
+  color: "fbca04"
+  description: "Minor impact"
+
+- name: "🔧 impact:patch"
+  color: "0e8a16"
+  description: "Patch level change"
+
+# ============================================
+# 8. Category Labels (5)
+# ============================================
+- name: "🎨 category:frontend"
+  color: "bfdadc"
+  description: "Frontend related"
+
+- name: "⚙️ category:backend"
+  color: "c2e0c6"
+  description: "Backend related"
+
+- name: "🏗️ category:infra"
+  color: "d4c5f9"
+  description: "Infrastructure related"
+
+- name: "🛠️ category:dx"
+  color: "fbca04"
+  description: "Developer experience"
+
+- name: "🔐 category:security"
+  color: "b60205"
+  description: "Security related"
+
+# ============================================
+# 9. Effort Labels (6)
+# ============================================
+- name: "⏱️ effort:1h"
+  color: "c2e0c6"
+  description: "~1 hour"
+
+- name: "⏱️ effort:4h"
+  color: "d4f4dd"
+  description: "~4 hours"
+
+- name: "⏱️ effort:1d"
+  color: "fbca04"
+  description: "~1 day"
+
+- name: "⏱️ effort:3d"
+  color: "f9d0c4"
+  description: "~3 days"
+
+- name: "⏱️ effort:1w"
+  color: "d93f0b"
+  description: "~1 week"
+
+- name: "⏱️ effort:2w"
+  color: "b60205"
+  description: "~2 weeks"
+
+# ============================================
+# 10. Blocked Labels (3)
+# ============================================
+- name: "🚧 blocked:waiting-review"
+  color: "d4c5f9"
+  description: "Waiting for review"
+
+- name: "🚧 blocked:waiting-deployment"
+  color: "c2e0c6"
+  description: "Waiting for deployment"
+
+- name: "🚧 blocked:waiting-feedback"
+  color: "fbca04"
+  description: "Waiting for feedback"
+
+# ============================================
+# Additional Special Labels
+# ============================================
+- name: "🔒 special:security"
+  color: "b60205"
+  description: "Security related"
+
+- name: "♿ special:accessibility"
+  color: "0e8a16"
+  description: "Accessibility improvements"
+
+- name: "⚡ special:performance"
+  color: "fbca04"
+  description: "Performance improvements"
+
+- name: "🌐 special:i18n"
+  color: "0075ca"
+  description: "Internationalization"
+
+- name: "👋 good-first-issue"
+  color: "7057ff"
+  description: "Good for newcomers"
+
+- name: "💬 discussion"
+  color: "cc317c"
+  description: "Needs discussion"
+
+- name: "🐞 needs-reproduction"
+  color: "ffa8c5"
+  description: "Bug needs reproduction steps"
+
+- name: "📝 needs-documentation"
+  color: "c5def5"
+  description: "Needs documentation"
+
+- name: "🔥 hotfix"
+  color: "d73a4a"
+  description: "Urgent hotfix needed"

@@ -15,7 +15,7 @@ import { getEventInfo, getTemporaryVideoUrl } from '@/lib/lark-client';
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { eventId: string } }
+  { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
     // 1. セッション確認（NextAuth）
@@ -31,8 +31,11 @@ export async function GET(
       );
     }
 
-    // 2. LarkBaseからイベント情報取得
-    const event = await getEventInfo(params.eventId);
+    // 2. paramsを解決
+    const { eventId } = await params;
+
+    // 3. LarkBaseからイベント情報取得
+    const event = await getEventInfo(eventId);
 
     if (!event.fileToken) {
       return NextResponse.json(
