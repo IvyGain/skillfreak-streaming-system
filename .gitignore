@@ -37,7 +37,16 @@ yarn-error.log*
 # vercel
 .vercel
 
+# downloads (large video files)
+/downloads/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 .env
+
+# temporary files
+/tmp-ui-kit/
+*.zip
+/tests/
+/scripts/test-format.ts

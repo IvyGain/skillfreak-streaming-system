@@ -133,13 +133,14 @@ export async function uploadVideoToLark(
         },
       } as any);
 
-      if (!res || res.code !== 0 || !res.data?.file_token) {
-        throw new Error(`Upload failed: ${res?.msg || 'Unknown error'}`);
+      const response = res as any;
+      if (!response || response.code !== 0 || !response.data?.file_token) {
+        throw new Error(`Upload failed: ${response?.msg || 'Unknown error'}`);
       }
 
-      console.log(`✅ アップロード完了: ${fileName}`);
-      console.log(`📎 File Token: ${res.data.file_token}`);
-      return res.data.file_token;
+      console.log(`アップロード完了: ${fileName}`);
+      console.log(`File Token: ${response.data.file_token}`);
+      return response.data.file_token;
     }
 
     // 大きなファイルは分割アップロード

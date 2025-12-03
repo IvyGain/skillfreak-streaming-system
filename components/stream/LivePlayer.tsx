@@ -25,7 +25,15 @@ export default function LivePlayer() {
     const video = videoRef.current;
     if (!video) return;
 
-    const streamUrl = `${process.env.NEXT_PUBLIC_STREAM_URL}/live/playlist.m3u8`;
+    // 環境変数チェック
+    const streamBaseUrl = process.env.NEXT_PUBLIC_STREAM_URL;
+    if (!streamBaseUrl) {
+      setError('配信URLが設定されていません。環境変数 NEXT_PUBLIC_STREAM_URL を設定してください。');
+      setIsLoading(false);
+      return;
+    }
+
+    const streamUrl = `${streamBaseUrl}/live/playlist.m3u8`;
 
     if (Hls.isSupported()) {
       const hls = new Hls({
@@ -45,25 +53,34 @@ export default function LivePlayer() {
 
       hls.on(Hls.Events.ERROR, (event, data) => {
         console.error('HLS error:', data);
+
+        // エラーの詳細をログ出力
+        if (data.details) {
+          console.error('Error details:', data.details);
+        }
+
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
               console.log('Network error, trying to recover...');
-              setError('ネットワークエラーが発生しました。再接続中...');
+              setError(`ネットワークエラーが発生しました。再接続中... (${data.details || 'unknown'})`);
               hls.startLoad();
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
               console.log('Media error, trying to recover...');
-              setError('メディアエラーが発生しました。復旧中...');
+              setError(`メディアエラーが発生しました。復旧中... (${data.details || 'unknown'})`);
               hls.recoverMediaError();
               break;
             default:
               console.log('Fatal error, destroying HLS instance');
-              setError('配信エラーが発生しました。ページを再読み込みしてください。');
+              setError(`配信エラーが発生しました。ページを再読み込みしてください。 (${data.type}: ${data.details || 'unknown'})`);
               hls.destroy();
               setIsLoading(false);
               break;
           }
+        } else {
+          // 致命的ではないエラーはログのみ
+          console.warn('Non-fatal HLS error:', data.type, data.details);
         }
       });
 

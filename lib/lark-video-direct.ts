@@ -60,10 +60,11 @@ export async function getVideoDirectUrl(shareToken: string): Promise<string | nu
         },
       });
 
-      console.log('📊 File API Response:', fileRes);
+      const fileResponse = fileRes as any;
+      console.log('File API Response:', fileResponse);
 
-      if (fileRes.code === 0) {
-        console.log('✅ Success via File API');
+      if (fileResponse?.code === 0) {
+        console.log('Success via File API');
         // File APIはバイナリデータを返すので、別のアプローチが必要
       }
     } catch (fileError: any) {
@@ -91,14 +92,14 @@ export async function getFileInfo(fileToken: string) {
   const client = getLarkClient();
 
   try {
-    const res = await client.drive.v1.file.get({
+    const res = await (client.drive.v1.file as any).get({
       path: {
         file_token: fileToken,
       },
     });
 
-    console.log('📄 File Info:', JSON.stringify(res, null, 2));
-    return res.data;
+    console.log('File Info:', JSON.stringify(res, null, 2));
+    return res?.data;
   } catch (error: any) {
     console.error('Failed to get file info:', error);
     return null;

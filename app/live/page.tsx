@@ -1,123 +1,138 @@
 /**
- * 24時間VOD配信ページ
- * Lark Driveフォルダ内の動画を順次リピート再生
+ * 24 Hours VOD Streaming Page (Synchronized)
+ * All viewers watch the same video at the same position - like a TV channel
  */
 
-import { getArchivedEvents } from '@/lib/larkbase-client';
-import LiveStreamPlayer from '@/components/stream/LiveStreamPlayer';
+import SyncLivePlayer from '@/components/stream/SyncLivePlayer';
+import BottomNavigation from '@/components/portal/BottomNavigation';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 60;
+export const revalidate = 0;  // No cache for live sync
 
-export default async function LivePage() {
-  // アーカイブありのイベントを取得
-  const events = await getArchivedEvents();
-
-  // ファイルトークンのリストを作成
-  const fileTokens = events
-    .filter((e) => e.archive_file_token)
-    .map((e) => ({
-      fileToken: e.archive_file_token!,
-      title: e.title,
-      id: e.id,
-    }));
-
+export default function LivePage() {
   return (
-    <div className="min-h-screen bg-gray-900">
-      {/* ヘッダー */}
-      <header className="bg-black border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="min-h-screen pb-24">
+      {/* Header */}
+      <header className="sticky top-0 z-40 glass">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-3 h-3 bg-red-600 rounded-full animate-pulse"></span>
-                <h1 className="text-2xl font-bold text-white">LIVE</h1>
+            <Link href="/" className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/skillfreak-icon.png"
+                alt="SkillFreak"
+                width={40}
+                height={40}
+                className="rounded-lg"
+              />
+              <div>
+                <h1 className="text-xl font-bold gradient-text">SkillFreak</h1>
+                <p className="text-xs text-gray-400">Live</p>
               </div>
-              <span className="text-gray-400 text-sm">
-                24時間ノンストップ配信中
-              </span>
-            </div>
-
-            <Link
-              href="/events"
-              className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              📚 アーカイブ一覧
             </Link>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-full text-sm font-semibold">
+                <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                LIVE
+              </div>
+              <Link
+                href="/playlist"
+                className="px-4 py-2 bg-[#1A1A2E] text-white rounded-full text-sm font-medium hover:bg-[#2D1B69] transition-colors"
+              >
+                Playlist
+              </Link>
+              <Link
+                href="/events"
+                className="px-4 py-2 bg-[#1A1A2E] text-white rounded-full text-sm font-medium hover:bg-[#2D1B69] transition-colors"
+              >
+                Archives
+              </Link>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* メインプレイヤー */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {fileTokens.length > 0 ? (
-          <LiveStreamPlayer playlist={fileTokens} />
-        ) : (
-          <div className="bg-black rounded-lg aspect-video flex items-center justify-center">
-            <div className="text-center text-gray-400">
-              <p className="text-lg mb-4">配信準備中...</p>
-              <Link
-                href="/events"
-                className="text-red-500 hover:text-red-400 underline"
-              >
-                アーカイブ一覧を見る
-              </Link>
+      {/* Main Player */}
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* Live Status Banner */}
+        <div className="card p-4 mb-6 bg-gradient-to-r from-red-900/30 to-purple-900/30 border-red-800/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
+                <span className="w-4 h-4 bg-white rounded-full animate-pulse" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">24 Hours Live Channel</h2>
+                <p className="text-sm text-gray-400">Everyone watching the same stream</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-gray-400">Synchronized</div>
+              <div className="text-sm text-green-400">All viewers in sync</div>
             </div>
           </div>
-        )}
-
-        {/* プレイリスト情報 */}
-        <div className="mt-8 bg-gray-800 rounded-lg p-6">
-          <h2 className="text-white text-lg font-semibold mb-4">
-            📋 プレイリスト ({fileTokens.length}本)
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {fileTokens.map((video, index) => (
-              <div
-                key={video.id}
-                className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors"
-              >
-                <div className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                    {index + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-medium truncate">
-                      {video.title}
-                    </h3>
-                    <Link
-                      href={`/events/${video.id}`}
-                      className="text-red-400 hover:text-red-300 text-sm"
-                    >
-                      詳細を見る →
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* 配信情報 */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gray-800 rounded-lg p-4 text-center">
-            <div className="text-3xl mb-2">🔴</div>
-            <div className="text-white font-semibold">24時間配信</div>
-            <div className="text-gray-400 text-sm">ノンストップ</div>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 text-center">
-            <div className="text-3xl mb-2">🎥</div>
-            <div className="text-white font-semibold">{fileTokens.length}本</div>
-            <div className="text-gray-400 text-sm">アーカイブ動画</div>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 text-center">
-            <div className="text-3xl mb-2">♾️</div>
-            <div className="text-white font-semibold">リピート再生</div>
-            <div className="text-gray-400 text-sm">自動ループ</div>
-          </div>
+        {/* Synchronized Video Player */}
+        <div className="card overflow-hidden mb-6">
+          <SyncLivePlayer />
         </div>
+
+        {/* Info Cards */}
+        <section className="grid grid-cols-3 gap-4 mb-6">
+          <div className="card p-4 text-center">
+            <div className="text-3xl mb-2">
+              <span className="inline-block w-4 h-4 bg-red-500 rounded-full animate-pulse" />
+            </div>
+            <div className="text-white font-semibold">24/7</div>
+            <div className="text-gray-400 text-sm">Streaming</div>
+          </div>
+          <div className="card p-4 text-center">
+            <div className="text-3xl mb-2">
+              <svg className="w-8 h-8 mx-auto text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <div className="text-white font-semibold">Synced</div>
+            <div className="text-gray-400 text-sm">Together</div>
+          </div>
+          <div className="card p-4 text-center">
+            <div className="text-3xl mb-2">
+              <svg className="w-8 h-8 mx-auto text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+            <div className="text-white font-semibold">Loop</div>
+            <div className="text-gray-400 text-sm">Auto-repeat</div>
+          </div>
+        </section>
+
+        {/* Links */}
+        <section className="card p-6">
+          <h3 className="text-lg font-bold text-white mb-4">Want to choose your own video?</h3>
+          <p className="text-gray-400 mb-4">
+            Visit the playlist page to browse and play videos at your own pace.
+          </p>
+          <div className="flex gap-3">
+            <Link
+              href="/playlist"
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+            >
+              Browse Playlist
+            </Link>
+            <Link
+              href="/events"
+              className="px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
+            >
+              View Archives
+            </Link>
+          </div>
+        </section>
       </main>
+
+      <BottomNavigation />
     </div>
   );
 }

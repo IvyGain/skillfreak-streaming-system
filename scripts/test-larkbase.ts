@@ -5,7 +5,7 @@
 import * as lark from '@larksuiteoapi/node-sdk';
 import * as dotenv from 'dotenv';
 
-dotenv.config({ path: '.env.local' });
+dotenv.config();  // Load .env
 
 const client = new lark.Client({
   appId: process.env.LARK_APP_ID!,
