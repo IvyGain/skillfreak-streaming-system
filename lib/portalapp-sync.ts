@@ -44,7 +44,7 @@ export async function getAllEvents(): Promise<Event[]> {
     throw new Error(`Failed to fetch events: ${res.msg}`);
   }
 
-  return res.data.items.map((item: any) => ({
+  return (res.data?.items || []).map((item: any) => ({
     id: item.record_id,
     title: item.fields.title,
     description: item.fields.description || '',
@@ -71,11 +71,11 @@ export async function getEvent(recordId: string): Promise<Event> {
     },
   });
 
-  if (res.code !== 0) {
+  if (res.code !== 0 || !res.data?.record) {
     throw new Error(`Failed to fetch event: ${res.msg}`);
   }
 
-  const item = res.data.record;
+  const item = res.data.record as any;
   return {
     id: item.record_id,
     title: item.fields.title,
@@ -103,13 +103,13 @@ export async function createEvent(event: Omit<Event, 'id' | 'created_at'>): Prom
     data: {
       fields: {
         title: event.title,
-        description: event.description,
+        description: event.description || '',
         scheduled_at: event.scheduled_at,
-        youtube_url: event.youtube_url,
-        archive_file_token: event.archive_file_token,
+        youtube_url: event.youtube_url || '',
+        archive_file_token: event.archive_file_token || '',
         status: event.status,
         visibility: event.visibility,
-        published_at: event.published_at,
+        published_at: event.published_at || '',
         created_at: new Date().toISOString(),
       },
     },
@@ -149,17 +149,45 @@ export async function updateEvent(
 }
 
 /**
- * アーカイブURL自動登録
+ * アーカイブURL自動登録（日本語フィールド対応）
  */
 export async function registerArchiveUrl(
   recordId: string,
   fileToken: string
 ): Promise<void> {
-  await updateEvent(recordId, {
-    archive_file_token: fileToken,
-    status: 'published',
-    published_at: new Date().toISOString(),
+  // 日本語フィールド名で更新
+  const res = await client.bitable.appTableRecord.update({
+    path: {
+      app_token: process.env.LARKBASE_APP_TOKEN!,
+      table_id: process.env.LARKBASE_TABLE_ID!,
+      record_id: recordId,
+    },
+    data: {
+      fields: {
+        // 日本語フィールド名「アーカイブ動画」（リンクタイプ）
+        'アーカイブ動画': {
+          link: `https://open.larksuite.com/drive/file/${fileToken}`,
+          text: 'アーカイブ動画',
+        },
+        // 英語フィールド名もフォールバックとして更新
+        'archive_file_token': fileToken,
+        'アーカイブファイルトークン': fileToken,
+      },
+    },
   });
+
+  if (res.code !== 0) {
+    throw new Error(`Failed to register archive URL: ${res.msg}`);
+  }
+
+  console.log(`✅ アーカイブURL登録完了: ${recordId}`);
+}
+
+/**
+ * アーカイブ動画URLを生成（Lark Drive file tokenから）
+ */
+export function generateArchiveUrl(fileToken: string): string {
+  return `https://open.larksuite.com/drive/file/${fileToken}`;
 }
 
 export default {
@@ -168,4 +196,5 @@ export default {
   createEvent,
   updateEvent,
   registerArchiveUrl,
+  generateArchiveUrl,
 };

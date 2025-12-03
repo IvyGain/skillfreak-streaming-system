@@ -24,7 +24,7 @@ async function getTenantAccessToken(): Promise<string> {
       app_id: process.env.LARK_APP_ID!,
       app_secret: process.env.LARK_APP_SECRET!,
     },
-  });
+  }) as { code?: number; msg?: string; tenant_access_token?: string };
 
   if (res.code !== 0) {
     throw new Error(`Failed to get tenant access token: ${res.msg}`);

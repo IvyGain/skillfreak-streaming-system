@@ -13,6 +13,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as lark from '@larksuiteoapi/node-sdk';
 import { uploadVideoToLark } from '../lib/lark-client';
+import { uploadVideoToLarkHTTP } from '../lib/lark-drive-http';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -132,12 +133,17 @@ async function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
-    console.error('使い方: ts-node youtube-to-lark-drive.ts <YouTube URL>');
+    console.error('使い方: ts-node youtube-to-lark-drive.ts <YouTube URL> [--record-id <LarkBase Record ID>]');
     console.error('例: ts-node youtube-to-lark-drive.ts https://www.youtube.com/watch?v=xxxxx');
+    console.error('例: ts-node youtube-to-lark-drive.ts https://www.youtube.com/watch?v=xxxxx --record-id recXXXXXX');
     process.exit(1);
   }
 
   const videoUrl = args[0];
+
+  // オプション: 既存のLarkBaseレコードIDを指定
+  const recordIdIndex = args.indexOf('--record-id');
+  const existingRecordId = recordIdIndex >= 0 ? args[recordIdIndex + 1] : null;
 
   // ディレクトリ作成
   if (!fs.existsSync(DOWNLOAD_DIR)) {
@@ -159,17 +165,41 @@ async function main() {
     }
 
     console.log('\n📤 Lark Driveにアップロード中...');
-    const fileToken = await uploadVideoToLark(videoFile, LARK_DRIVE_FOLDER_TOKEN);
+    // ファイルサイズに応じてアップロード方式を選択
+    const stats = fs.statSync(videoFile);
+    const fileSize = stats.size;
+    let fileToken: string;
+
+    if (fileSize < 10 * 1024 * 1024) {
+      // 10MB未満: SDK実装を使用
+      fileToken = await uploadVideoToLark(videoFile, LARK_DRIVE_FOLDER_TOKEN);
+    } else {
+      // 10MB以上: HTTP直接実装を使用（大容量ファイル対応）
+      console.log(`📊 大容量ファイル (${(fileSize / 1024 / 1024).toFixed(2)}MB) - HTTP直接アップロード使用`);
+      fileToken = await uploadVideoToLarkHTTP(videoFile, LARK_DRIVE_FOLDER_TOKEN);
+    }
     console.log(`✅ アップロード完了: ${fileToken}`);
 
-    // 3. LarkBaseに登録
-    const recordId = await registerToLarkBase(metadata, fileToken);
+    // 3. LarkBaseに登録/更新
+    let recordId: string;
+
+    if (existingRecordId) {
+      // 既存レコードの「アーカイブ動画」フィールドを更新
+      console.log(`\n📝 既存レコード更新中: ${existingRecordId}`);
+      const { registerArchiveUrl } = await import('../lib/portalapp-sync');
+      await registerArchiveUrl(existingRecordId, fileToken);
+      recordId = existingRecordId;
+    } else {
+      // 新規レコード作成
+      recordId = await registerToLarkBase(metadata, fileToken);
+    }
 
     console.log('\n' + '='.repeat(60));
     console.log('🎉 処理完了！');
     console.log(`\n📊 LarkBase Record ID: ${recordId}`);
     console.log(`📎 Lark Drive File Token: ${fileToken}`);
     console.log(`🎥 動画タイトル: ${metadata.title}`);
+    console.log(`🔗 アーカイブURL: https://open.larksuite.com/drive/file/${fileToken}`);
     console.log(`\nPortalで確認: http://localhost:3000/events/${recordId}`);
 
     // クリーンアップ（オプション）

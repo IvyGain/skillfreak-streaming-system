@@ -50,13 +50,16 @@ async function uploadVideo(filePath: string): Promise<string> {
       size: stats.size,
       file: fileStream,
     },
-  });
+  }) as { code?: number; msg?: string; data?: { file_token?: string } };
 
-  if (res.code !== 0) {
-    throw new Error(`アップロード失敗: ${res.msg}`);
+  if (!res || res.code !== 0) {
+    throw new Error(`アップロード失敗: ${res?.msg || 'Unknown error'}`);
   }
 
-  const fileToken = res.data.file_token;
+  const fileToken = res.data?.file_token;
+  if (!fileToken) {
+    throw new Error('アップロード成功したがfile_tokenが取得できませんでした');
+  }
   console.log('✅ アップロード成功!');
   console.log('📎 File Token:', fileToken);
 
@@ -67,16 +70,19 @@ async function getTemporaryUrl(fileToken: string): Promise<string> {
   console.log('\n🔗 一時URL取得中...');
 
   const res = await client.drive.media.batchGetTmpDownloadUrl({
-    data: {
+    params: {
       file_tokens: [fileToken],
     },
-  });
+  }) as { code?: number; msg?: string; data?: { tmp_download_urls?: Array<{ tmp_download_url?: string }> } };
 
-  if (res.code !== 0) {
-    throw new Error(`URL取得失敗: ${res.msg}`);
+  if (!res || res.code !== 0) {
+    throw new Error(`URL取得失敗: ${res?.msg || 'Unknown error'}`);
   }
 
-  const tmpUrl = res.data.tmp_download_urls[0].tmp_download_url;
+  const tmpUrl = res.data?.tmp_download_urls?.[0]?.tmp_download_url;
+  if (!tmpUrl) {
+    throw new Error('URL取得成功したがURLが空でした');
+  }
   console.log('✅ 一時URL取得成功（24時間有効）');
   console.log('🌐 URL:', tmpUrl);
 
@@ -86,8 +92,7 @@ async function getTemporaryUrl(fileToken: string): Promise<string> {
 async function testVideoPlayback(url: string): Promise<void> {
   console.log('\n🎬 再生テスト...');
 
-  // HEADリクエストでファイル情報取得
-  const fetch = (await import('node-fetch')).default;
+  // HEADリクエストでファイル情報取得（Node.js 18+ native fetch）
   const response = await fetch(url, { method: 'HEAD' });
 
   if (!response.ok) {
