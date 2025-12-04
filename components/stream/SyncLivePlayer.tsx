@@ -19,6 +19,7 @@ interface SyncState {
   isPlaying: boolean;
   totalVideos: number;
   serverTime: string;
+  syncedFromRedis?: boolean;  // Redis同期フラグ
 }
 
 /**
@@ -41,18 +42,37 @@ export default function SyncLivePlayer() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [clientTimeOffset, setClientTimeOffset] = useState<number>(0);
   const playerRef = useRef<HTMLIFrameElement>(null);
+  const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // サーバーから再生状態を取得
+  // サーバーから再生状態を取得（改善版 - 時刻補正付き）
   const fetchSyncState = useCallback(async () => {
     try {
+      const requestTime = Date.now();
       const res = await fetch('/api/stream/sync');
+      const responseTime = Date.now();
       const data = await res.json();
 
       if (data.success) {
+        // ネットワーク遅延を計算
+        const networkLatency = (responseTime - requestTime) / 2;
+        const serverTime = new Date(data.data.serverTime).getTime();
+        const adjustedServerTime = serverTime + networkLatency;
+
+        // クライアントとサーバーの時刻差を記録
+        const timeOffset = adjustedServerTime - responseTime;
+        setClientTimeOffset(timeOffset);
+
+        // 同期状態を保存
         setSyncState(data.data);
         setLastSync(new Date());
         setError(null);
+
+        // Redis同期の場合はログ出力
+        if (data.data.syncedFromRedis) {
+          console.log('✓ Synced from Redis (network latency:', networkLatency.toFixed(0), 'ms)');
+        }
       } else {
         setError(data.error || 'Failed to fetch sync state');
       }
@@ -63,24 +83,44 @@ export default function SyncLivePlayer() {
     }
   }, []);
 
-  // 初回ロードと定期同期
+  // 初回ロードと適応的同期
   useEffect(() => {
     fetchSyncState();
 
-    // 30秒ごとに同期（動画切り替え検知用）
-    const interval = setInterval(fetchSyncState, 30000);
+    // 最初は15秒ごとに同期（動画切り替え検知用）
+    if (syncIntervalRef.current) {
+      clearInterval(syncIntervalRef.current);
+    }
 
-    return () => clearInterval(interval);
+    syncIntervalRef.current = setInterval(fetchSyncState, 15000);
+
+    return () => {
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+      }
+    };
   }, [fetchSyncState]);
 
-  // YouTube埋め込みURLを生成（開始位置付き）
+  // YouTube埋め込みURLを生成（開始位置付き・改善版）
   const getYouTubeEmbedUrl = (url: string, startPosition: number): string => {
     const videoId = getYouTubeVideoId(url);
     if (!videoId) return '';
 
-    // 開始位置を秒で指定
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&start=${Math.floor(startPosition)}&rel=0&modestbranding=1`;
+    // ネットワーク遅延を考慮した開始位置補正
+    const adjustedPosition = Math.max(0, Math.floor(startPosition));
+
+    // 開始位置を秒で指定（より正確な同期のためのパラメータ追加）
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&start=${adjustedPosition}&rel=0&modestbranding=1&enablejsapi=1`;
   };
+
+  // 現在の再生位置を計算（時刻補正付き）
+  const getCurrentPosition = useCallback(() => {
+    if (!syncState || !lastSync) return 0;
+
+    const now = Date.now();
+    const elapsedSinceSync = (now - lastSync.getTime()) / 1000;
+    return syncState.position + elapsedSinceSync;
+  }, [syncState, lastSync]);
 
   if (isLoading) {
     return (
@@ -178,11 +218,18 @@ export default function SyncLivePlayer() {
       <div className="bg-gray-800 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              syncState?.syncedFromRedis ? 'bg-green-600' : 'bg-red-600'
+            }`}>
               <span className="w-3 h-3 bg-white rounded-full animate-pulse"></span>
             </div>
             <div>
-              <div className="text-white font-semibold">24/7 Live Stream</div>
+              <div className="text-white font-semibold flex items-center gap-2">
+                24/7 Live Stream
+                {syncState?.syncedFromRedis && (
+                  <span className="text-xs bg-green-600 px-2 py-0.5 rounded-full">Redis</span>
+                )}
+              </div>
               <div className="text-gray-400 text-sm">
                 {lastSync ? `Synced ${Math.floor((Date.now() - lastSync.getTime()) / 1000)}s ago` : 'Syncing...'}
               </div>

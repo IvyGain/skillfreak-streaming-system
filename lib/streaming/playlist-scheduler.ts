@@ -1,7 +1,8 @@
 /**
- * Playlist Scheduler - 24時間VOD配信用スケジューラー
+ * Playlist Scheduler - 24時間VOD配信用スケジューラー（改善版）
  *
  * プレイリストを管理し、現在再生中の動画と再生位置を追跡
+ * スムーズな動画切り替えと24時間ループ再生をサポート
  */
 
 export interface VideoItem {
@@ -17,6 +18,8 @@ export interface PlaybackState {
   position: number;  // 秒
   startedAt: Date;
   isPlaying: boolean;
+  nextVideo?: VideoItem | null;  // 次の動画（プリロード用）
+  remainingTime?: number;  // 現在の動画の残り時間
 }
 
 export class PlaylistScheduler {
@@ -48,7 +51,7 @@ export class PlaylistScheduler {
   }
 
   /**
-   * 現在の再生状態を取得
+   * 現在の再生状態を取得（改善版 - 次の動画情報と残り時間も返す）
    */
   getPlaybackState(): PlaybackState {
     if (this.playlist.length === 0) {
@@ -58,12 +61,18 @@ export class PlaylistScheduler {
         position: 0,
         startedAt: this.startTime,
         isPlaying: false,
+        nextVideo: null,
+        remainingTime: 0,
       };
     }
 
     // 経過時間を計算
     const now = new Date();
     const elapsedSeconds = Math.floor((now.getTime() - this.startTime.getTime()) / 1000);
+
+    // 24時間ループ対応: プレイリスト全体の長さで割った余りを使用
+    const totalPlaylistDuration = this.getTotalDuration();
+    const loopedElapsed = totalPlaylistDuration > 0 ? elapsedSeconds % totalPlaylistDuration : 0;
 
     // 現在再生中の動画と位置を計算
     let totalDuration = 0;
@@ -74,33 +83,45 @@ export class PlaylistScheduler {
       const video = this.playlist[i];
       const duration = this.videoDurations.get(video.id) || video.duration || this.defaultDuration;
 
-      if (totalDuration + duration > elapsedSeconds) {
+      if (totalDuration + duration > loopedElapsed) {
         currentIndex = i;
-        position = elapsedSeconds - totalDuration;
-        break;
+        position = loopedElapsed - totalDuration;
+
+        // 次の動画を取得
+        const nextIndex = (i + 1) % this.playlist.length;
+        const nextVideo = this.playlist[nextIndex];
+
+        // 残り時間を計算
+        const remainingTime = duration - position;
+
+        return {
+          currentVideoIndex: currentIndex,
+          currentVideo: this.playlist[currentIndex],
+          position,
+          startedAt: this.startTime,
+          isPlaying: true,
+          nextVideo,
+          remainingTime,
+        };
       }
 
       totalDuration += duration;
-
-      // ループ: 全て再生したら最初に戻る
-      if (i === this.playlist.length - 1) {
-        const totalPlaylistDuration = totalDuration + duration;
-        const loopedElapsed = elapsedSeconds % totalPlaylistDuration;
-        return this.calculatePositionFromElapsed(loopedElapsed);
-      }
     }
 
+    // フォールバック（理論的にはここには到達しない）
     return {
-      currentVideoIndex: currentIndex,
-      currentVideo: this.playlist[currentIndex],
-      position,
+      currentVideoIndex: 0,
+      currentVideo: this.playlist[0],
+      position: 0,
       startedAt: this.startTime,
       isPlaying: true,
+      nextVideo: this.playlist.length > 1 ? this.playlist[1] : null,
+      remainingTime: this.videoDurations.get(this.playlist[0].id) || this.playlist[0].duration || this.defaultDuration,
     };
   }
 
   /**
-   * 経過時間から再生位置を計算（ループ対応）
+   * 経過時間から再生位置を計算（ループ対応・改善版）
    */
   private calculatePositionFromElapsed(elapsed: number): PlaybackState {
     let totalDuration = 0;
@@ -110,12 +131,18 @@ export class PlaylistScheduler {
       const duration = this.videoDurations.get(video.id) || video.duration || this.defaultDuration;
 
       if (totalDuration + duration > elapsed) {
+        const position = elapsed - totalDuration;
+        const nextIndex = (i + 1) % this.playlist.length;
+        const remainingTime = duration - position;
+
         return {
           currentVideoIndex: i,
           currentVideo: this.playlist[i],
-          position: elapsed - totalDuration,
+          position,
           startedAt: this.startTime,
           isPlaying: true,
+          nextVideo: this.playlist[nextIndex],
+          remainingTime,
         };
       }
 
@@ -129,6 +156,8 @@ export class PlaylistScheduler {
       position: 0,
       startedAt: this.startTime,
       isPlaying: true,
+      nextVideo: this.playlist.length > 1 ? this.playlist[1] : null,
+      remainingTime: this.videoDurations.get(this.playlist[0].id) || this.playlist[0].duration || this.defaultDuration,
     };
   }
 
